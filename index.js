@@ -4,9 +4,9 @@ const axios = require('axios')
 const DERPI_API_KEY = "DERPI_API_KEY"
 
 const client = new Client();
-async function process_response(message, img_id) {
+async function send_link(message, img_id) {
     const author_id = message.author.id
-    if (img_id!==undefined) {
+    if (img_id !== undefined) {
         const derpi_url = `https://derpibooru.org/images/${img_id}`;
         message.channel.send(`<@!${author_id}> ${derpi_url}`);
     } else {
@@ -25,14 +25,14 @@ client.on('message', async (message) => {
             return
         }
         try {
-            let msg = await message.channel.messages.fetch(msg_id)
+            const msg = await message.channel.messages.fetch(msg_id)
             msg.embeds.forEach(async (el) => {
-                if(el.url.includes("https://derpicdn.net")){   //https://derpicdn.net/img/view/{year}/{month}/{day}/2378301.gif
-                   const index_of_last_slash =  el.url.lastIndexOf("/") 
-                   const index_of_last_dot =  el.url.lastIndexOf(".") 
-                   const img_id=el.url.slice(index_of_last_slash+1,index_of_last_dot)
-                   process_response(message, img_id)
-                   return
+                if (el.url.includes("https://derpicdn.net")) {   //https://derpicdn.net/img/view/{year}/{month}/{day}/2378301.gif
+                    const index_of_last_slash = el.url.lastIndexOf("/")
+                    const index_of_last_dot = el.url.lastIndexOf(".")
+                    const img_id = el.url.slice(index_of_last_slash + 1, index_of_last_dot)
+                    send_link(message, img_id)
+                    return
                 }
                 if (el.url.includes("https://imgur.com/")) {
                     const index = el.url.indexOf("https://imgur.com/")
@@ -43,12 +43,12 @@ client.on('message', async (message) => {
                     el.url = "https://i.imgur.com/" + img_id
                 }
                 const response = await axios.post(`https://derpibooru.org/api/v1/json/search/reverse?key=${DERPI_API_KEY}&url=${el.url}`);
-                process_response(message, response.data.images[0]?.id)
+                send_link(message, response.data.images[0]?.id)
             })
 
             msg.attachments.forEach(async (el) => {
                 const response = await axios.post(`https://derpibooru.org/api/v1/json/search/reverse?key=${DERPI_API_KEY}&url=${el.attachment}`);
-                process_response(message, response.data.images[0]?.id)
+                send_link(message, response.data.images[0]?.id)
             })
         } catch (err) {
             console.log(err)
